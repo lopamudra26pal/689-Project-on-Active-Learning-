@@ -21,8 +21,8 @@ np.random.seed(0)
 #Global dictionary of index:data point mapping to be used by the oracle
 mydictx,mydicty = {},{}
 cvalue = 1e+33
-svalue = 10
-batchsize = 10
+svalue = 100
+batchsize = 5
 
 def processdata():
     #DATA PROCESSING
@@ -234,7 +234,7 @@ def oracle(X):
 def main():
     #processdata()
     #Load data
-    X = np.load('X_1500.npy') #(1417L, 49L)
+    X = np.load('X.npy') #(1417L, 49L)
     Y = np.load('Y.npy') #(1417L,)
     #scaler = MinMaxScaler()  # Default behavior is to scale to [0,1]
     #X = scaler.fit_transform(X)
@@ -252,15 +252,15 @@ def main():
     #C=1000 gives 81.5 over whole data
     #for m in range(0,)
     logregobj = LogisticRegression(C=cvalue,random_state=0)
-    returnedobj = logregobj.fit(Xtr[:40],Ytr[:40])
+    returnedobj = logregobj.fit(Xtr[:50],Ytr[:50])
     #ytrlr = returnedobj.predict(Xtr)
     #print accuracy_score(Ytr,ytrlr)
     ytelr = returnedobj.predict(Xte)
     print accuracy_score(Yte,ytelr)
     
     #Let us remove 450 labels and start with 50 labelled points
-    yremoved = removelabels(30,Ytr[:40])
-    UX,UY,LX,LY = partition(Xtr[:40],yremoved)
+    yremoved = removelabels(30,Ytr[:50])
+    UX,UY,LX,LY = partition(Xtr[:50],yremoved)
     ALaccuracy,RSaccuracy,BALaccuracy = [],[],[]
     #Start with 50 and increase number of queries the learner can ask by 50 every iteration
     for tval in range(10,20,10):
