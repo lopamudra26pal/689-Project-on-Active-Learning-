@@ -12,3 +12,23 @@ Active
 Random
 [0.70503597122302153, 0.75539568345323738, 0.75779376498800954, 0.77937649880095927, 0.78177458033573144, 0.80815347721822539, 0.80815347721822539, 0.78896882494004794, 0.81294964028776984]
 Linear kernel took around 20 mins to run compared to rbf .
+
+
+Linear takes around 20 mins compared to few seconds in rbf:
+This behavior is dependent upon the features with large values. Think about working in infinitely dimensional space. As the values that you populate that infinitely dimensional space with get larger the space between their multidimensional products gets a lot bigger. I cannot stress that a lot enough. Read about The Curse of Dimensionality, and do read more than just the wiki entry I linked. This spacing is what makes the process take longer. The mathematics behind trying to separate the classes in this massive space just get drastically more complex, especially as the number of features and observations grow. Thus it is critical to always scale your data. Even if you are just doing a simple linear regression it is a good practice as you will remove any possible bias towards features with larger values.
+
+scaler = MinMaxScaler()  # Default behavior is to scale to [0,1]
+X = scaler.fit_transform(X)
+
+1. Drastically changed linear kernel time to 5 seconds
+linear
+Active
+[0.74820143884892087, 0.79616306954436455, 0.80335731414868106, 0.80335731414868106, 0.81055155875299756, 0.81294964028776984, 0.80815347721822539, 0.81055155875299756, 0.80095923261390889]
+Random
+[0.74100719424460426, 0.77458033573141483, 0.75299760191846521, 0.76498800959232616, 0.78896882494004794, 0.79376498800959228, 0.80335731414868106, 0.79376498800959228, 0.80095923261390889]
+rbf
+although time decreases, accuracy decreases if i scale to 0.75 from 0.812, also passive sampling is a straight line. thus scaling on rbf won't work.
+Active
+[0.75779376498800954, 0.76258992805755399, 0.75059952038369304, 0.75539568345323738, 0.75539568345323738, 0.75299760191846521, 0.75299760191846521, 0.75299760191846521, 0.75299760191846521]
+Random
+[0.75299760191846521, 0.75299760191846521, 0.75299760191846521, 0.75299760191846521, 0.75299760191846521, 0.75299760191846521, 0.75299760191846521, 0.75299760191846521, 0.75299760191846521]
