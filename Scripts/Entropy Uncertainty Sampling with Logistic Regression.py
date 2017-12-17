@@ -83,6 +83,7 @@ def LogRegTrain(LX,LY,C):
 def ActiveLearning(UX,UY,LX,LY,T): 
     for t in range(0,T):
         wmle,bmle,returnedobj = LogRegTrain(LX,LY,C=100000)
+        #Predict_proba gives us predicted probability values for class labels 
         predictedy = returnedobj.predict_proba(UX)
         #Entropy utility measure (ACTIVE LEARNING) 
         queryindex = np.argmax(np.sum(-predictedy*np.log(predictedy),axis=1))
