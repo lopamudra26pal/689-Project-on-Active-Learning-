@@ -185,7 +185,7 @@ def BayesianActiveLearning(UX,UY,LX,LY,T):
     #Variance covariance matrix of 100I 
     sigma = np.identity(np.array(LX).shape[1]+1)
     for t in range(0,T):
-        #Drawing 100 samples from parameter posterior
+        #Drawing svalue samples from parameter posterior
         thetars = rejection_sampler(svalue,LX,LY,mu,sigma)
         predictedy = BayesianPredict(svalue,UX,thetars)
         #Entropy utility measure (ACTIVE LEARNING) 
