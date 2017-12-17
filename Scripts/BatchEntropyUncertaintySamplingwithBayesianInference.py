@@ -94,6 +94,7 @@ def rejection_sampler(S,X,Y,mu,sigma):
     wmle = np.asarray(returnedobj.coef_[0])
     bmle = np.asarray(returnedobj.intercept_[0])
     pmlesum = 0
+    #MLE computation has numerical stability issues, look at the final script version for stable computation
     for i in range(len(X)):
         expcoeff = np.exp(-(wmle.dot(X[i].T)+bmle))
         if Y[i] == 1:
