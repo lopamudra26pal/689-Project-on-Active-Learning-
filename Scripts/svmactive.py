@@ -12,19 +12,22 @@ import matplotlib.lines as mlines
 import pandas as pd
 import numpy.ma as ma
 from sklearn.svm import SVC
+from sklearn.preprocessing import MinMaxScaler
 
 np.random.seed(0)
 
 # Global dictionary of index:data point mapping to be used by the oracle
 mydictx, mydicty = {}, {}
 
-
+c = 1
+k = 'rbf'
+# cparam = 1e+33
 def processdata():
     # DATA PROCESSING
     # Loading data from CSV
-    df = pd.read_csv('WomenHealth_Training.csv', sep=',')
     # Remove religion string as this information is already encoded in individual binary features
     # Remove patientID and INTNR as they are patient identifiers and not features
+    df = pd.read_csv('WomenHealth_Training.csv', sep=',')
     data = df.drop(['religion', 'patientID', 'INTNR'], axis=1).values
     count = 0
     validdatalist = []
@@ -72,29 +75,19 @@ def partition(X, Y):
             LY.append(Y[i])
     return UX, UY, LX, LY
 
-
-def LogRegTrain(LX, LY, C):
-    # Inputs LX (data points), LY (labels for data points in LX),C = inverse regularization strength
-    # Returns parameter values
-    logregobj = LogisticRegression(C=100000)
-    returnedobj = logregobj.fit(LX, LY)
-    wmle = np.asarray(returnedobj.coef_[0])
-    bmle = np.asarray(returnedobj.intercept_[0])
-    return wmle, bmle, returnedobj
-
 def SVMmodel(LX, LY, c, k):
     # Inputs LX (data points), LY (labels for data points in LX),C = inverse regularization strength
     # Returns parameter values
     clf = SVC(C=c,kernel=k).fit(LX, LY)
     return clf
 
+
 def ActiveLearning(UX, UY, LX, LY, T):
+    global c
+    global k
     for t in range(0, T):
-        # wmle, bmle, returnedobj = LogRegTrain(LX, LY, C=100000)
-        # predictedy = returnedobj.predict_proba(UX)
-        svmobj = SVMmodel(LX, LY, c=1, k='rbf')
+        svmobj = SVMmodel(LX, LY,c,k)
         # Entropy utility measure (ACTIVE LEARNING)
-        #sample = UX[np.argmin(np.abs(svmobj.decision_function(UX)))]
         queryindex = np.argmin(np.abs(svmobj.decision_function(UX)))
         # print queryindex,UX[queryindex]
         truelabel = oracle(UX[queryindex].tolist())
@@ -104,17 +97,16 @@ def ActiveLearning(UX, UY, LX, LY, T):
         UX = np.delete(UX, queryindex, axis=0)
         UY = np.delete(UY, queryindex, axis=0)
     # Train for the last time with all the labeled data
-    print('AS:' + str(len(UY)))
-    svmobj = SVMmodel(LX, LY, c=1, k='rbf')
+    svmobj = SVMmodel(LX, LY, c,k)
     return svmobj
-    #wmle, bmle, returnedobj = LogRegTrain(LX, LY, C=100000)
-    # return wmle, bmle, returnedobj
-
 
 def RandomSampling(UX, UY, LX, LY, T):
+    global c
+    global k
+    print('unlabelled:' + str(len(UY)))
+    print('labelled:' + str(len(LY)))
     for t in range(0, T):
-        # wmle, bmle, returnedobj = LogRegTrain(LX, LY, C=100000)
-        svmobj = SVMmodel(LX, LY, c=1, k='rbf')
+        svmobj = SVMmodel(LX, LY, c,k)
         # Random sampling (PASSIVE LEARNING)
         queryindex = np.random.randint(0, len(UX))
         # print queryindex,UX[queryindex]
@@ -125,12 +117,10 @@ def RandomSampling(UX, UY, LX, LY, T):
         UX = np.delete(UX, queryindex, axis=0)
         UY = np.delete(UY, queryindex, axis=0)
     # Train for the last time with all the labeled data
-    print('RS:'+str(len(UY)))
-    svmobj = SVMmodel(LX, LY, c=1, k='rbf')
+    print('unlabelled:'+str(len(UY)))
+    print('labelled:' + str(len(LY)))
+    svmobj = SVMmodel(LX, LY, c,k)
     return svmobj
-    # wmle, bmle, returnedobj = LogRegTrain(LX, LY, C=100000)
-    # return wmle, bmle, returnedobj
-
 
 def oracle(X):
     # Input X, query for true label
@@ -141,50 +131,52 @@ def oracle(X):
 
 
 def main():
-    # processdata()
+    #processdata()
     # Load data
     X = np.load('X.npy')  # (1417L, 49L)
     Y = np.load('Y.npy')  # (1417L,)
+    print X.shape
+    #scale data
+    # scaler = MinMaxScaler()  # Default behavior is to scale to [0,1]
+    # X = scaler.fit_transform(X)
+
     Xtr = X[:1000]
     Ytr = Y[:1000]
     Xte = X[1000:1417]
     Yte = Y[1000:1417]
     print Xtr.shape, Ytr.shape, Xte.shape, Yte.shape
 
-    global mydictx, mydicty
+    global mydictx, mydicty,c,k
     # Initialize mydictx and mydicty
     for i in range(0, len(Xtr)):
         mydictx[i] = Xtr[i].tolist()
         mydicty[i] = Ytr[i].tolist()
-    # C=1000 gives 81.5 over whole data
-    # logregobj = LogisticRegression(C=100000)
-    # returnedobj = logregobj.fit(Xtr[:500], Ytr[:500])
-    # # ytrlr = returnedobj.predict(Xtr)
-    # # print accuracy_score(Ytr,ytrlr)
-    # ytelr = returnedobj.predict(Xte)
-    # print 'log reg model score without active learning:'
-    # print accuracy_score(Yte, ytelr)
-    clf = SVMmodel(Xtr[:500], Ytr[:500], c=1, k='rbf')
-    # ytrlr = returnedobj.predict(Xtr)
-    # print accuracy_score(Ytr,ytrlr)
+    clf = SVMmodel(Xtr, Ytr, c,k)
     print "Accuracy with SVM(C=1):", clf.score(Xte, Yte)
 
-
     #Let us remove 450 labels and start with 50 labelled points
-    yremoved = removelabels(450,Ytr[:500])
-    UX,UY,LX,LY = partition(Xtr[:500],yremoved)
+    # yremoved = removelabels(450,Ytr[:500])
+    # UX,UY,LX,LY = partition(Xtr[:500],yremoved)
+    # np.save('UXtr450.npy', UX)
+    # np.save('UYtr450.npy', UY)
+    # np.save('LXtr50.npy', LX)
+    # np.save('LYtr50.npy', LY)
+    # UX = np.load('UXtr450.npy')
+    # UY = np.load('UYtr450.npy')
+    # LX = np.load('LXtr50.npy')
+    # LY = np.load('LYtr50.npy')
+    # UX = np.load('UXtr100.npy')
+    # UY = np.load('UYtr100.npy')
+    # LX = np.load('LXtr100.npy')
+    # LY = np.load('LYtr100.npy')
+    UX = np.load('UXtr1500.npy')
+    UY = np.load('UYtr1500.npy')
+    LX = np.load('LXtr1500.npy')
+    LY = np.load('LYtr1500.npy')
     ALaccuracy,RSaccuracy = [],[]
     #Start with 50 and increase number of queries the learner can ask by 50 every iteration
-    for tval in range(50,500,50):
-        # wmle,bmle,ALreturnedobj = ActiveLearning(UX,UY,LX,LY,T=tval)
-        # alyte = ALreturnedobj.predict(Xte)
-        # #print tval,accuracy_score(Yte,alyte)
-        # ALaccuracy.append(accuracy_score(Yte,alyte))
-        #
-        # wmle,bmle,RSreturnedobj = RandomSampling(UX,UY,LX,LY,T=tval)
-        # rsyte = RSreturnedobj.predict(Xte)
-        # #print accuracy_score(Yte,rsyte)
-        # RSaccuracy.append(accuracy_score(Yte,rsyte))
+    for tval in range(100,1000,100):
+        print tval
         ALsvcobj = ActiveLearning(UX, UY, LX, LY, T=tval)
         ALaccuracy.append(ALsvcobj.score(Xte,Yte))
 
@@ -194,18 +186,23 @@ def main():
     print ALaccuracy
     print 'Random'
     print RSaccuracy
-    np.save('ALSVC.npy',np.array(ALaccuracy))
-    np.save('RSSVC.npy',np.array(RSaccuracy))
+    np.save('ALSV_1500.npy',np.array(ALaccuracy))
+    np.save('RSSV_1500.npy',np.array(RSaccuracy))
 
-    ALaccuracy = np.load('ALSVC.npy')
-    RSaccuracy = np.load('RSSVC.npy')
-    plt.title("Active Learning vs Passive Learning")
-    plt.xlabel('Number of Queries')
-    plt.ylabel('Accuracy')
-    xaxis = np.arange(50, 500, 50)
-    plt.plot(xaxis, ALaccuracy, color='g', label='Active Learning')
-    plt.plot(xaxis, RSaccuracy, color='r', label='Passive Learning')
-    plt.legend()
+    ALaccuracy = np.load('ALSV_1500.npy')
+    RSaccuracy = np.load('RSSV_1500.npy')
+    fig, ax = plt.subplots()
+    xaxis = np.arange(100,1000,100)
+    ax.plot(xaxis, ALaccuracy, color='g', label='Active Learning')
+    ax.plot(xaxis, RSaccuracy, color='r', label='Passive Learning')
+    legend = ax.legend(loc=4, shadow=True)
+    frame = legend.get_frame()
+    frame.set_facecolor('0.85')
+    plt.xlabel('Number of Queries ---->')
+    plt.ylabel('Accuracy---->')
+    plt.title(
+        r'Active Learning vs Passive Learning')
+    plt.grid(False)
     plt.show()
 
 

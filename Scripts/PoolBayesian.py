@@ -268,8 +268,8 @@ def main():
     # X = scaler.fit_transform(X)
     Xtr = X[:1000]
     Ytr = Y[:1000]
-    Xte = X[1000:1100]
-    Yte = Y[1000:1100]
+    Xte = X[1000:1417]
+    Yte = Y[1000:1417]
     print Xtr.shape, Ytr.shape, Xte.shape, Yte.shape
 
     global mydictx, mydicty, cvalue, svalue, batchsize
@@ -278,13 +278,17 @@ def main():
         mydictx[i] = Xtr[i].tolist()
         mydicty[i] = Ytr[i].tolist()
     # Load unlabelled-labelled (90-10) split data as run on other experiments.
-    UX = np.load('UXtr100.npy')
-    UY = np.load('UYtr100.npy')
-    LX = np.load('LXtr100.npy')
-    LY = np.load('LYtr100.npy')
-    ALaccuracy, RSaccuracy, BALaccuracy = [], [], []
+    UX = np.load('UXtr450.npy')
+    UY = np.load('UYtr450.npy')
+    LX = np.load('LXtr50.npy')
+    LY = np.load('LYtr50.npy')
+    # UX = np.load('UXtr100.npy')
+    # UY = np.load('UYtr100.npy')
+    # LX = np.load('LXtr100.npy')
+    # LY = np.load('LYtr100.npy')
+    BALaccuracy = []
     # Start with 50 and increase number of queries the learner can ask by 50 every iteration
-    for tval in range(10, 100, 10):
+    for tval in range(50, 500, 50):
         print 'tval', tval
         # wmle, bmle, ALreturnedobj = ActiveLearning(UX, UY, LX, LY, T=tval)
         # alyte = ALreturnedobj.predict(Xte)
@@ -305,11 +309,11 @@ def main():
     print querytime
     # np.save('ALAccu450.npy', np.array(ALaccuracy))
     # np.save('RSAccu450.npy', np.array(RSaccuracy))
-    np.save('poolBay.npy', np.array(BALaccuracy))
-    np.save('pooltime.npy', np.array(querytime))
+    np.save('poolBay500.npy', np.array(BALaccuracy))
+    # np.save('pooltime.npy', np.array(querytime))
     fig, ax = plt.subplots()
-    xaxis = np.arange(10, 100, 10)
-    ax.plot(xaxis, BALaccuracy, color='g', label='SAMPLE=100')
+    xaxis = np.arange(50, 500, 50)
+    ax.plot(xaxis, BALaccuracy, color='g', label='SAMPLE=50')
     ax.plot(xaxis, querytime, color='r', label='time')
     legend = ax.legend(loc=4, shadow=True)
     frame = legend.get_frame()
